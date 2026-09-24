@@ -1,0 +1,50 @@
+# Les valeurs viennent du fichier .env à la racine (voir .env.example)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 3s
+      retries: 20
+
+  # Serveur SMTP de dev : attrape les mails (reset password)
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+      - "1025:1025"
+
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET manquant dans .env}
+      WEB_URL: http://localhost:${WEB_PORT:-8080}
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        VITE_API_URL: http://localhost:${API_PORT:-3000}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
