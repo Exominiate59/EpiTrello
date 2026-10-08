@@ -22,6 +22,16 @@ export function validateBoardTitle(title: string): string | undefined {
   if (title.trim().length > 60) return 'Le titre doit faire 60 caractères maximum';
 }
 
+export function validateListTitle(title: string): string | undefined {
+  if (!title.trim()) return 'Le titre est obligatoire';
+  if (title.trim().length > 60) return 'Le titre doit faire 60 caractères maximum';
+}
+
+export function validateCardTitle(title: string): string | undefined {
+  if (!title.trim()) return 'Le titre est obligatoire';
+  if (title.trim().length > 200) return 'Le titre doit faire 200 caractères maximum';
+}
+
 export function validateConfirm(password: string, confirm: string): string | undefined {
   if (password !== confirm) return 'Les mots de passe ne correspondent pas';
 }
