@@ -26,6 +26,33 @@ model Board {
   owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  lists     List[]
 
   @@index([ownerId])
+}
+
+model List {
+  id        String   @id @default(cuid())
+  title     String
+  /// Ordre dans le board : on insère « entre deux » sans renuméroter les voisines
+  position  Float
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards     Card[]
+  createdAt DateTime @default(now())
+
+  @@index([boardId, position])
+}
+
+model Card {
+  id        String   @id @default(cuid())
+  title     String
+  /// Ordre dans la liste, même principe que List.position
+  position  Float
+  listId    String
+  list      List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([listId, position])
 }

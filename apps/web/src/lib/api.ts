@@ -53,3 +53,18 @@ export interface Board {
   color: string;
   createdAt: string;
 }
+
+export interface Card {
+  id: string;
+  title: string;
+  position: number;
+  listId: string;
+}
+
+export interface List {
+  id: string;
+  title: string;
+  position: number;
+  boardId: string;
+  cards: Card[];
+}

@@ -47,8 +47,8 @@ Chaque `.env.example` liste les variables nécessaires. Les `.env` ne sont jamai
 | Semaines | Thème | Statut |
 |---|---|---|
 | 1–2 | Comptes, boards, mot de passe oublié, Docker | ✅ Livré |
-| 3–4 | Listes et cartes | En cours |
-| 5–6 | Glisser-déposer, détail d'une carte, déplacer entre boards | À venir |
+| 3–4 | Listes, cartes, renommer en cliquant, ordre des listes, dupliquer, chargement | ✅ Livré |
+| 5–6 | Glisser-déposer, détail d'une carte, déplacer entre boards | En cours |
 | 7–8 | Temps réel, membres, invitations, assignation | À venir |
 | 9–10 | Labels et checklists | À venir |
 | 11–12 | Commentaires, recherche et filtres | À venir |

@@ -1,34 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import AddForm from '../components/AddForm';
 import Header from '../components/Header';
+import InlineEdit from '../components/InlineEdit';
+import ListColumn from '../components/ListColumn';
+import { BoardSkeleton, Skeleton } from '../components/Skeleton';
 import { api, ApiError, Board } from '../lib/api';
-import { validateBoardTitle } from '../lib/validation';
+import { useBoardContent } from '../lib/useBoardContent';
+import { validateBoardTitle, validateListTitle } from '../lib/validation';
 
 export default function BoardPage() {
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const qc = useQueryClient();
   const board = useQuery({ queryKey: ['boards', id], queryFn: () => api<Board>(`/boards/${id}`) });
-  const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState('');
-  const [error, setError] = useState<string>();
+  const content = useBoardContent(id);
 
   const rename = useMutation({
-    mutationFn: (newTitle: string) => api<Board>(`/boards/${id}`, { method: 'PATCH', body: { title: newTitle } }),
+    mutationFn: (title: string) => api<Board>(`/boards/${id}`, { method: 'PATCH', body: { title } }),
     onSuccess: (updated) => {
       qc.setQueryData(['boards', id], updated);
       qc.invalidateQueries({ queryKey: ['boards'], exact: true });
-      setEditing(false);
     },
-    onError: (err) => setError(err instanceof ApiError ? err.messages.join(' · ') : 'Erreur inattendue'),
   });
-
-  function save() {
-    if (title.trim() === board.data?.title) return setEditing(false);
-    const err = validateBoardTitle(title);
-    setError(err);
-    if (!err) rename.mutate(title.trim());
-  }
 
   if (board.isError) {
     return (
@@ -42,45 +35,50 @@ export default function BoardPage() {
     );
   }
 
+  const lists = content.lists.data ?? [];
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: board.data?.color ?? '#0079bf' }}>
+    <div className="flex h-screen flex-col" style={{ backgroundColor: board.data?.color ?? '#0079bf' }}>
       <Header transparent />
       <div className="flex items-center gap-3 bg-black/15 px-4 py-2">
-        {editing ? (
-          <div>
-            <input
-              autoFocus
-              aria-label="Titre du board"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onFocus={(e) => e.target.select()}
-              onBlur={save}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') save();
-                if (e.key === 'Escape') setEditing(false);
-              }}
-              className="rounded px-2 py-1 text-lg font-bold text-slate-800"
-            />
-            {error && <p className="mt-1 text-xs text-white">{error}</p>}
-          </div>
-        ) : (
-          <button
-            onClick={() => {
-              setTitle(board.data?.title ?? '');
-              setError(undefined);
-              setEditing(true);
-            }}
-            title="Cliquer pour renommer"
+        {board.data ? (
+          <InlineEdit
+            value={board.data.title}
+            label="Titre du board"
+            validate={validateBoardTitle}
+            onSave={(title) => rename.mutateAsync(title)}
             className="rounded px-2 py-1 text-lg font-bold text-white hover:bg-white/20"
-          >
-            {board.data?.title ?? '…'}
-          </button>
+            inputClassName="text-lg font-bold"
+            errorClassName="text-white"
+          />
+        ) : (
+          <Skeleton className="h-7 w-48 bg-white/40" />
         )}
       </div>
-      <main className="p-4">
-        <div className="w-72 rounded-lg bg-white/80 p-4 text-sm text-slate-600">
-          Les listes et les cartes arrivent bientot.
-        </div>
+
+      <main className="flex flex-1 items-start gap-3 overflow-x-auto p-4">
+        {content.lists.isLoading ? (
+          <BoardSkeleton />
+        ) : content.lists.isError ? (
+          <p className="rounded bg-white/90 p-3 text-sm text-red-700">{(content.lists.error as ApiError).messages.join(' · ')}</p>
+        ) : (
+          <>
+            {lists.map((list, index) => (
+              <ListColumn key={list.id} list={list} index={index} count={lists.length} actions={content} />
+            ))}
+            {content.createList.isPending && <Skeleton className="h-24 w-72 shrink-0 rounded-xl bg-white/40" />}
+            <div className="w-72 shrink-0">
+              <AddForm
+                dark
+                openLabel={lists.length ? 'Ajouter une autre liste' : 'Ajouter une liste'}
+                placeholder="Titre de la liste"
+                submitLabel="Ajouter la liste"
+                validate={validateListTitle}
+                onAdd={(title) => content.createList.mutateAsync(title)}
+              />
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
