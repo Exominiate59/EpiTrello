@@ -1,4 +1,4 @@
-import { compact, validateBoardTitle, validateConfirm, validateEmail, validateName, validatePassword } from './validation';
+import { compact, validateBoardTitle, validateCardTitle, validateListTitle, validateConfirm, validateEmail, validateName, validatePassword } from './validation';
 
 describe('validation des formulaires', () => {
   it('valide les e-mails', () => {
@@ -17,6 +17,13 @@ describe('validation des formulaires', () => {
     expect(validateName('   ')).toBe('Le nom est obligatoire');
     expect(validateBoardTitle('a'.repeat(61))).toMatch(/60 caractères/);
     expect(validateBoardTitle('Projet')).toBeUndefined();
+  });
+
+  it('valide les titres de listes et de cartes', () => {
+    expect(validateListTitle('')).toBe('Le titre est obligatoire');
+    expect(validateListTitle('a'.repeat(61))).toMatch(/60 caractères/);
+    expect(validateCardTitle('a'.repeat(200))).toBeUndefined();
+    expect(validateCardTitle('a'.repeat(201))).toMatch(/200 caractères/);
   });
 
   it('vérifie la confirmation du mot de passe', () => {
